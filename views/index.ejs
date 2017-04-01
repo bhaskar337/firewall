@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Slide Menu</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+  <script src="/socket.io/socket.io.js"></script>
+
+
+  <style>
+
+    html,body{
+      height:100%;
+    }
+
+    .glyphicon-chevron-down{
+      color:white;
+    }
+
+    .btn:hover{
+      color:#DE696B !important;
+    }
+
+    .navbar{
+      margin-bottom: 0px;
+    }
+
+    .navbar-inverse{
+
+      background-color:#414141;
+    }
+
+    .navbar-toggle{
+      float:left;
+      border:none;
+    }
+
+    .navbar-header .navbar-toggle:hover i{
+      color:#DE696B ;
+    }
+
+    .navbar-header .navbar-toggle:hover{
+      color:#DE696B ;
+      background-color:#414141;
+
+    }
+
+    #left-panel-button{
+      cursor: pointer;
+      float:left;
+      margin-top:8px;
+      margin-right:5px;
+      color:white;
+      background-color:#414141;
+      display:none;
+    }
+
+    #right-panel-button{
+      cursor: pointer;
+      float:right;
+      margin-top:8px;
+      margin-right:10px;
+      color:white;
+      background-color:#414141;
+      display:none;
+      border:0;
+    }
+
+    .left-panel{
+      position: absolute;
+      left:0px;
+      background:white;
+      border-right:1px solid silver;
+      width:250px;
+      height:100%;
+      z-index: 1;
+      overflow-y: hidden;
+      transition:0.5s;
+    }
+
+
+
+    .right-panel{
+      position: absolute;
+      background:white;
+      border-left:1px solid silver;
+      right:0px;
+      width:250px;
+      height:100%;
+      z-index: 1;
+      overflow-y: hidden;
+      transition:0.5s;
+    }
+
+    .right-panel-header{
+      font-weight: bold;
+      text-align: center;
+      border-bottom: 1px solid silver;
+      width: 100%;
+      height: 30px;
+    }
+
+    .a_friend{
+      height: 50px;    }
+
+    .a_friend:hover{
+      cursor: pointer;
+      background-color: rgba(255, 0, 0, 0.2);
+      background-image: linear-gradient(#de696b,#de696b);
+      background-repeat: no-repeat;
+      background-size: 4px 100%, calc(100% - 4px) 50%;
+    }
+
+    .a_friend img{
+      vertical-align:middle;
+      margin-top: 6px;
+      margin-left:10px;
+      width:40px;
+      height:40px;
+      border-radius: 18px;
+    }
+
+    #main-content-wrapper{
+      position: absolute;
+      width:50%;
+      margin-left:300px;
+      border:1px solid #414141;
+    }
+
+    @media screen and (max-width:1200px){
+
+      #left-panel-button{
+        display:inline;
+      }
+
+      #right-panel-button{
+        display:inline;
+      }
+
+      .left-panel{
+        width:0px;
+      }
+
+      .right-panel{
+        width:0px;
+      }
+
+      #main-content-wrapper{
+        width:100%;
+        margin-left:0px;
+      }
+    }
+
+    /*for chat popups*/
+    .popup-box
+    {
+      display: none;
+      position: fixed;
+      bottom: 5px;
+      right: 250px;
+      height: 285px;
+      background-color: rgb(237, 239, 244);
+      width: 300px;
+      border: 1px solid rgba(29, 49, 91, .3);
+      z-index: 2;
+      border-radius:5px;
+    }
+
+    .popup-box .popup-head
+    {
+      background-color: #414141;
+      padding: 5px;
+      color: white;
+      font-weight: bold;
+      font-size: 14px;
+      clear: both;
+      height:30px;
+      border-top-left-radius:5px;
+      border-top-right-radius: 5px;
+    }
+
+    .popup-box .popup-head .popup-head-left
+    {
+      float: left;
+      cursor: pointer;
+    }
+
+    .popup-box .popup-head .popup-head-right
+    {
+      cursor: pointer;
+      float: right;
+      opacity: 0.5;
+    }
+
+    .popup-box .popup-head .popup-head-right a
+    {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .popup-box .popup-body-form-wrapper{
+      background-image:url('images/chat-background.jpg');
+      background-size: cover;
+      display:block;
+      height:100%;
+    }
+
+    .popup-box .popup-messages
+    {
+      height:80%;
+      overflow-y: scroll;
+    }
+
+    .message-input{
+        width:80%;
+        border:1px solid white;
+        border-radius:2px;
+        margin-left:5px;
+        margin-bottom: 5px;
+    }
+
+    .send-button{
+        border: 1px solid #deb696;
+        border-radius:15px;
+        background-color: #DE696B;
+        height:30px;
+        margin-left: 10px;
+    }
+
+    .glyphicon-send{
+        color:white;
+    }
+
+      .a_message{
+        background-color: palegreen;
+        display: block;
+        float:right;
+        border-radius:10px;
+        margin-bottom: 10px;
+        margin-right: 15px;
+         padding: 2px 10px;
+        text-align: center;
+          white-space: nowrap;
+          clear: both;
+        -webkit-animation-duration: 0.1s;
+        animation-duration: 0.1s;
+        -webkit-animation-fill-mode: both;
+        animation-fill-mode: both;
+        -webkit-animation-name: fadeIn;
+        animation-name: fadeIn;
+      }
+      .r_message{
+        background-color: #f2f2f2;
+        display: block;
+        float:left;
+        border-radius:10px;
+        margin-bottom: 10px;
+        margin-left: 15px;
+        padding: 2px 10px;
+        text-align: center;
+          white-space: nowrap;
+          clear: both;
+        -webkit-animation-duration: 0.1s;
+        animation-duration: 0.1s;
+        -webkit-animation-fill-mode: both;
+        animation-fill-mode: both;
+        -webkit-animation-name: fadeIn;
+        animation-name: fadeIn;
+      }
+/*
+      .a_message:before{
+        position:absolute;
+        content:" ";
+        width:0px;
+        height:0px;
+        right:22px;
+        border:10px solid;
+        border-color: palegreen transparent transparent transparent;
+      }
+*/
+    @-webkit-keyframes fadeIn {
+      0% {opacity: 0;}
+      100% {opacity: 1;}
+    }
+
+    @keyframes fadeIn {
+      0% {opacity: 0;}
+      100% {opacity: 1;}
+    }
+  </style>
+
+
+  <script type="text/javascript" src="javascripts/main.js"></script>
+
+    <!-- nodejs script -->
+    <script>
+        var to;
+    </script>
+</head>
+<body>
+<nav class="navbar navbar-inverse">
+  <div class="container-fluid">
+    <div class="navbar-header">
+      <a href="#" class="btn" id="left-panel-button">
+        <i class="glyphicon glyphicon-chevron-right"></i>
+      </a>
+      <a class="navbar-brand" href="#">WebSiteName</a>
+      <button type="button" class="navbar-toggle btn" data-toggle="collapse" data-target="#myNavbar">
+        <i class="glyphicon glyphicon-chevron-down"></i>
+      </button>
+      <button type="button" class="btn" id="right-panel-button" >
+        <i class="glyphicon glyphicon-chevron-left"></i>
+      </button>
+    </div>
+    <div class="collapse navbar-collapse" id="myNavbar">
+      <ul class="nav navbar-nav">
+        <li class="active"><a href="#">Search</a></li>
+        <li class="dropdown">
+          <a>Build Profile</a>
+        </li>
+        <li><a href="#">Filter</a></li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li><a href="#"><span class="glyphicon glyphicon-log-out"></span> Sign Out</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+ <%
+  var matches = [
+      {
+          name:"Deep",
+          uname:"deep"
+      },
+      {
+          name: "Bhaskar",
+          uname: "bhaskar"
+      },
+      {
+          name: "Anand",
+          uname: "anand"
+      }
+      ,
+      {
+          name:"Gaurav",
+          uname:"gaurav"
+      },
+      {
+          name: "Vinit",
+          uname: "vinit"
+      }
+  ];
+  %>
+
+<div id="wrapper">
+  <div class="left-panel">
+    <ul>
+      <li>Deep</li>
+      <li>Bodra</li>
+      <li>A</li>
+      <li>11</li>
+    </ul>
+  </div>
+
+  <div id="main-content-wrapper">
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-lg-12">
+          <p>dsadkas</p>
+          <p>dsadkas</p>
+          <p>dsadkas</p>
+          <p>dsadkas</p>
+          <p>dsadkas</p>
+
+          <p>Select User</p>
+          <% for (var i in matches){ %>
+            <input class="user" type="button" data-target='<%=matches[i].uname %>' value='<%=matches[i].name%>'>
+          <% } %>
+          <p id="message-container"></p>
+        
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="right-panel">
+    <div class="right-panel-header">
+      Matches
+    </div>
+
+    <% for(var i in matches) {%>
+    <div class="a_friend" data-target='<%= matches[i].uname %>'>
+        <img width="30" height="30" src="images/1.jpg" />
+        <span><%= matches[i].name%></span>
+    </div>
+     <% }%>
+
+  </div>
+</div>
+</body>
+</html>
+
